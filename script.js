@@ -1,15 +1,44 @@
-// SPA Navigation
+// Navigation functions for separate pages
+function showWishlist() {
+  // Redirect to main page with wishlist modal
+  window.location.href = 'index.html#wishlist';
+}
+
+function showCart() {
+  // Redirect to main page with cart modal
+  window.location.href = 'index.html#cart';
+}
+
+// Legacy SPA Navigation (for backward compatibility on index.html)
 function showPage(page) {
-  document.querySelectorAll('.page').forEach(el => el.style.display = 'none');
-  if (page === 'beranda') {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const pageElement = document.getElementById(page + 'Page');
+  if (pageElement) {
+    document.querySelectorAll('.page').forEach(el => el.style.display = 'none');
+    if (page === 'beranda') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    pageElement.style.display = 'block';
+    // Special: Hide 'featured-products' and 'featured-categories' if not on Beranda
+    const featuredProducts = document.querySelector('.featured-products');
+    const featuredCategories = document.querySelector('.featured-categories');
+    const heroSection = document.querySelector('.hero-section');
+    
+    if (featuredProducts) featuredProducts.style.display = (page === 'beranda') ? 'block' : 'none';
+    if (featuredCategories) featuredCategories.style.display = (page === 'beranda') ? 'block' : 'none';
+    if (heroSection) heroSection.style.display = (page === 'beranda') ? 'block' : 'none';
   }
-  document.getElementById(page + 'Page').style.display = 'block';
-  // Special: Hide 'featured-products' and 'featured-categories' if not on Beranda
-  document.querySelector('.featured-products').style.display = (page === 'beranda') ? 'block' : 'none';
-  document.querySelector('.featured-categories').style.display = (page === 'beranda') ? 'block' : 'none';
-  // Show hero only on Beranda
-  document.querySelector('.hero-section').style.display = (page === 'beranda') ? 'block' : 'none';
+}
+
+// Handle hash URL navigation
+function handleHashNavigation() {
+  const hash = window.location.hash.substring(1); // Remove # symbol
+  if (hash === 'wishlist') {
+    showPage('wishlist');
+  } else if (hash === 'cart') {
+    showPage('keranjang');
+  } else {
+    showPage('beranda');
+  }
 }
 
 // Dummy product data
@@ -21,15 +50,22 @@ const products = [
   { id: 5, name: "Optimus Prime", category: "transformers", price: 1050000, rating: 4.7, img: "img/optimusprime.png" },
   { id: 6, name: "Spider-Man", category: "marvel", price: 650000, rating: 4.6, img: "img/spidermanfunkopop.png" },
   { id: 7, name: "Cat Woman", category: "dc", price: 770000, rating: 4.5, img: "img/catwoman.png" },
-  { id: 8, name: "Sasuke Uchiha", category: "anime", price: 630000, rating: 4.7, img: "img/luffyfigure.png" },
+  { id: 8, name: "Monkey D Luffy ", category: "anime", price: 630000, rating: 4.7, img: "img/luffyfigure.png" },
   // Tambahkan lebih banyak produk sesuai kebutuhan
 ];
 
-let wishlist = [];
-let cart = [];
+// Load data from localStorage or initialize empty arrays
+let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
+let cart = JSON.parse(localStorage.getItem('cart')) || [];
 let currentCategory = 'all';
 let catalogPageSize = 6;
 let catalogPageIndex = 1;
+
+// Save data to localStorage
+function saveToLocalStorage() {
+  localStorage.setItem('wishlist', JSON.stringify(wishlist));
+  localStorage.setItem('cart', JSON.stringify(cart));
+}
 
 // Featured products (pick 4)
 function loadFeaturedProducts() {
@@ -175,6 +211,7 @@ function searchProducts() {
 // Wishlist
 function addToWishlist(id) {
   if (!wishlist.includes(id)) wishlist.push(id);
+  saveToLocalStorage(); // Save to localStorage
   updateWishlistCount();
   showWishlistItems();
 }
@@ -218,6 +255,7 @@ function showWishlistItems() {
 
 function removeFromWishlist(id) {
   wishlist = wishlist.filter(item => item !== id);
+  saveToLocalStorage(); // Save to localStorage
   updateWishlistCount();
   showWishlistItems();
 }
@@ -230,6 +268,7 @@ function addToCart(id) {
   } else {
     cart.push({ id, qty: 1 });
   }
+  saveToLocalStorage(); // Save to localStorage
   updateCartCount();
   showCartItems();
 }
@@ -284,12 +323,14 @@ function updateCartQty(id, delta) {
   if (!item) return;
   item.qty += delta;
   if (item.qty < 1) item.qty = 1;
+  saveToLocalStorage(); // Save to localStorage
   updateCartCount();
   showCartItems();
 }
 
 function removeFromCart(id) {
   cart = cart.filter(item => item.id !== id);
+  saveToLocalStorage(); // Save to localStorage
   updateCartCount();
   showCartItems();
 }
@@ -309,44 +350,76 @@ function updateCartSummary() {
 
 function proceedToCheckout() {
   if (cart.length === 0) return;
-  alert('Checkout berhasil! Terima kasih sudah belanja di ActionFigureHub.');
+  alert('Checkout berhasil! Terima kasih sudah belanja di toy.sub.');
   cart = [];
+  saveToLocalStorage(); // Save to localStorage
   updateCartCount();
   showCartItems();
 }
 
-// Contact form
+// Contact form and page initialization
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('contactForm').onsubmit = function(e) {
-    e.preventDefault();
-    document.getElementById('contactSuccess').style.display = 'block';
-    setTimeout(() => {
-      document.getElementById('contactSuccess').style.display = 'none';
-    }, 4000);
-    this.reset();
-  };
+  // Contact form (if exists on current page)
+  const contactForm = document.getElementById('contactForm');
+  if (contactForm) {
+    contactForm.onsubmit = function(e) {
+      e.preventDefault();
+      const successElement = document.getElementById('contactSuccess');
+      if (successElement) {
+        successElement.style.display = 'block';
+        setTimeout(() => {
+          successElement.style.display = 'none';
+        }, 4000);
+      }
+      this.reset();
+    };
+  }
 
-  // Newsletter
-  document.getElementById('newsletterForm').onsubmit = function(e) {
-    e.preventDefault();
-    alert('Terima kasih telah berlangganan newsletter!');
-    this.reset();
-  };
+  // Newsletter (if exists on current page)
+  const newsletterForm = document.getElementById('newsletterForm');
+  if (newsletterForm) {
+    newsletterForm.onsubmit = function(e) {
+      e.preventDefault();
+      alert('Terima kasih telah berlangganan newsletter!');
+      this.reset();
+    };
+  }
 
-  // Initial page load
-  showPage('beranda');
-  loadFeaturedProducts();
-  showCatalogList();
-  updateWishlistCount();
-  updateCartCount();
-  showWishlistItems();
-  showCartItems();
-  // Back to top button
+  // Initialize based on current page
+  const currentPage = window.location.pathname.split('/').pop();
+  
+  if (currentPage === 'index.html' || currentPage === '') {
+    // Home page initialization
+    handleHashNavigation(); // Handle hash URL navigation
+    loadFeaturedProducts();
+    showCatalogList();
+    updateWishlistCount();
+    updateCartCount();
+    showWishlistItems();
+    showCartItems();
+  } else if (currentPage === 'katalog.html') {
+    // Catalog page initialization
+    showCatalogList();
+    updateWishlistCount();
+    updateCartCount();
+  } else if (currentPage === 'tentang.html') {
+    // About page initialization
+    updateWishlistCount();
+    updateCartCount();
+  } else if (currentPage === 'kontak.html') {
+    // Contact page initialization
+    updateWishlistCount();
+    updateCartCount();
+  }
+
+  // Back to top button (if exists)
   const backToTop = document.getElementById('backToTop');
-  window.addEventListener('scroll', () => {
-    backToTop.style.display = window.scrollY > 200 ? 'block' : 'none';
-  });
-  backToTop.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (backToTop) {
+    window.addEventListener('scroll', () => {
+      backToTop.style.display = window.scrollY > 200 ? 'block' : 'none';
+    });
+    backToTop.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   // Allow navigation from footer/social/other links
   document.querySelectorAll('[onclick*="showPage"]').forEach(el => {
@@ -354,6 +427,9 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
     });
   });
+
+  // Listen for hash changes
+  window.addEventListener('hashchange', handleHashNavigation);
 });
 
 
@@ -371,3 +447,4 @@ window.searchProducts = searchProducts;
 window.loadMoreProducts = loadMoreProducts;
 window.sortProducts = sortProducts;
 window.proceedToCheckout = proceedToCheckout;
+window.handleHashNavigation = handleHashNavigation;
